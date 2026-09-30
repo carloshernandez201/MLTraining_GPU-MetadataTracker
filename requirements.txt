@@ -1,0 +1,8 @@
+# core (everything else is stdlib)
+torch>=2.0
+nvidia-ml-py>=12.0      # GPUCollector "nvml" backend; falls back to nvidia-smi / dummy without it
+
+# optional
+openai>=1.40            # profiler/src/feedLLMData.py
+pybind11>=2.11          # make pybind (CUDA profiler Python module)
+pytest>=7

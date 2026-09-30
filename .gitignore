@@ -1,0 +1,18 @@
+# build output
+profiler/bin/
+*.so
+*.o
+
+# profiler output
+logs/
+profile_data/
+trace.json
+cuda_kernels.json
+**/control.json
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/

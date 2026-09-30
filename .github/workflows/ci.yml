@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cpp:
+    name: C++ (mock build, parser tests, smoke run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build mock + run tests
+        working-directory: profiler
+        run: make MOCK=1 && make MOCK=1 test
+      - name: Smoke-run daemon (mock GPUs)
+        working-directory: profiler
+        run: |
+          ./bin/profiler_daemon -i 0.2 -d 1 --stdout > out.jsonl
+          python3 -c "import json; recs=[json.loads(l) for l in open('out.jsonl')]; assert recs and all(r['source']=='gpu' for r in recs); print(len(recs), 'records')"
+
+  cuda:
+    name: Real NVML daemon + CUDA profiler compile
+    runs-on: ubuntu-latest
+    container: nvidia/cuda:12.4.1-devel-ubuntu22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: apt-get update && apt-get install -y make g++
+      - name: Build daemon against NVML (CUDA toolkit stubs)
+        working-directory: profiler
+        run: make
+      - name: Build CUDA profiler demo
+        working-directory: profiler
+        run: make cuda
+
+  python:
+    name: Python tests + dummy integration run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU torch + pytest
+        run: pip install --index-url https://download.pytorch.org/whl/cpu torch && pip install pytest
+      - run: pytest -q tests
+      - run: python examples/full_integration.py --dummy --epochs 2 --steps 10
